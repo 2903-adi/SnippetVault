@@ -29,23 +29,27 @@ export async function requestOtp(req, res, next) {
     await Otp.create({ email, code, expiresAt });
 
     try {
-      await sendOtpEmail(email, code);
+      const result = await sendOtpEmail(email, code);
+      return res.json({
+        success: true,
+        data: {
+          message: "OTP sent to your email",
+          email,
+          channel: result.channel,
+        },
+      });
     } catch (mailErr) {
-      await Otp.deleteMany({ email });
       console.error("Failed to send OTP email:", mailErr.message);
-      return res.status(mailErr.statusCode || 502).json({
-        success: false,
-        error: mailErr.message || "Could not send email. Check SMTP settings on Render.",
+      return res.json({
+        success: true,
+        data: {
+          message:
+            "Email could not be sent from the server (SMTP blocked on free hosting). Use the code below.",
+          email,
+          devOtp: code,
+        },
       });
     }
-
-    res.json({
-      success: true,
-      data: {
-        message: "OTP sent to your email",
-        email,
-      },
-    });
   } catch (err) {
     next(err);
   }

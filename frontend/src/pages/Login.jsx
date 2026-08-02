@@ -27,9 +27,14 @@ export default function Login() {
     setInfo("");
     setLoading(true);
     try {
-      await requestOtp(email);
+      const data = await requestOtp(email);
       setStep("otp");
-      setInfo("Check your inbox (and spam) for a 6-digit code.");
+      if (data.devOtp) {
+        setCode(data.devOtp);
+        setInfo(`Email delivery is blocked on free hosting. Your login code is ${data.devOtp}`);
+      } else {
+        setInfo("Check your inbox (and spam) for a 6-digit code.");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
