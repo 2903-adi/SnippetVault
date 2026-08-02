@@ -27,6 +27,7 @@ export function createTransporter() {
       user: process.env.SMTP_USER.trim(),
       pass,
     },
+    family: 4,
     connectionTimeout: 20000,
     greetingTimeout: 20000,
     socketTimeout: 20000,
