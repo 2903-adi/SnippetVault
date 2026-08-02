@@ -1,3 +1,4 @@
+import dns from "dns/promises";
 import nodemailer from "nodemailer";
 
 function hasSmtpConfig() {
@@ -8,7 +9,7 @@ function hasSmtpConfig() {
   );
 }
 
-export function createTransporter() {
+async function createTransporter() {
   if (!hasSmtpConfig()) {
     const err = new Error(
       "Email is not configured. Add SMTP_HOST, SMTP_USER, and SMTP_PASS in Render Environment"
@@ -17,17 +18,33 @@ export function createTransporter() {
     throw err;
   }
 
+  const host = process.env.SMTP_HOST.trim();
   const pass = process.env.SMTP_PASS.replace(/\s+/g, "");
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = process.env.SMTP_SECURE === "true";
+
+  let ipv4;
+  try {
+    const lookedUp = await dns.lookup(host, { family: 4 });
+    ipv4 = lookedUp.address;
+    console.log(`SMTP resolving ${host} -> ${ipv4} (IPv4)`);
+  } catch (err) {
+    const e = new Error(`Could not resolve SMTP host ${host} to IPv4: ${err.message}`);
+    e.statusCode = 502;
+    throw e;
+  }
 
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === "true",
+    host: ipv4,
+    port,
+    secure,
     auth: {
       user: process.env.SMTP_USER.trim(),
       pass,
     },
-    family: 4,
+    tls: {
+      servername: host,
+    },
     connectionTimeout: 20000,
     greetingTimeout: 20000,
     socketTimeout: 20000,
@@ -35,7 +52,7 @@ export function createTransporter() {
 }
 
 export async function sendOtpEmail(email, code) {
-  const transporter = createTransporter();
+  const transporter = await createTransporter();
   const from = (process.env.MAIL_FROM || process.env.SMTP_USER).trim();
 
   try {
