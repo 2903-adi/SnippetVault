@@ -33,19 +33,45 @@ app.use("/api", snippetRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+function maskMongoUri(uri) {
+  try {
+    const parsed = new URL(uri);
+    if (parsed.password) parsed.password = "***";
+    return parsed.toString();
+  } catch {
+    return "(invalid URI format)";
+  }
+}
+
 async function start() {
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI?.trim();
+
+  console.log("Starting SnippetVault API...");
+  console.log(`Node: ${process.version}`);
+  console.log(`PORT: ${PORT}`);
+  console.log(`MONGODB_URI set: ${Boolean(uri)}`);
+  if (uri) {
+    console.log(`MONGODB_URI host: ${maskMongoUri(uri)}`);
+  }
+
   if (!uri) {
-    throw new Error("MONGODB_URI is not set");
+    throw new Error("MONGODB_URI is not set in Render Environment");
+  }
+
+  if (uri.includes("127.0.0.1") || uri.includes("localhost")) {
+    throw new Error(
+      "MONGODB_URI points to localhost. Use your MongoDB Atlas mongodb+srv:// URI on Render."
+    );
   }
 
   await connectDB(uri);
-  app.listen(PORT, () => {
-    console.log(`SnippetVault API running on http://localhost:${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`SnippetVault API running on port ${PORT}`);
   });
 }
 
 start().catch((err) => {
-  console.error("Failed to start server:", err);
+  console.error("Failed to start server:", err?.message || err);
+  if (err?.reason) console.error("Mongo reason:", err.reason);
   process.exit(1);
 });

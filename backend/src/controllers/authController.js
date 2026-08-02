@@ -35,10 +35,7 @@ export async function requestOtp(req, res, next) {
       console.error("Failed to send OTP email:", mailErr.message);
       return res.status(mailErr.statusCode || 502).json({
         success: false,
-        error:
-          mailErr.statusCode === 503
-            ? mailErr.message
-            : "Could not send email. Check SMTP settings in backend/.env (use a Gmail App Password).",
+        error: mailErr.message || "Could not send email. Check SMTP settings on Render.",
       });
     }
 
