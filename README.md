@@ -1,14 +1,14 @@
 ﻿# SnippetVault
 
-Secure temporary code snippet sharing ΓÇö Node.js, Express.js, MongoDB, Nodemailer auth, and a React frontend.
+Secure temporary code snippet sharing — Node.js, Express.js, MongoDB, Nodemailer auth, and a React frontend.
 
 ## Structure
 
 ```
 SnippetVault/
-Γö£ΓöÇΓöÇ backend/     # Express REST API + MongoDB
-Γö£ΓöÇΓöÇ frontend/    # React (Vite) app
-ΓööΓöÇΓöÇ README.md
+├── backend/     # Express REST API + MongoDB
+├── frontend/    # React (Vite) app
+└── README.md
 ```
 
 ## Features
@@ -21,11 +21,7 @@ SnippetVault/
 - Unique short-URL IDs (nanoid)
 - Self-destructing snippets with MongoDB TTL indexes
 
-
-
 ## Local setup
-
-
 
 ### Backend
 
@@ -50,25 +46,21 @@ App: `http://localhost:5173`
 
 ## Deploy (Vercel + Render + MongoDB Atlas)
 
-
-
 ### 1. MongoDB Atlas (database)
 
 1. Create a free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. Database Access ΓåÆ create a user
-3. Network Access ΓåÆ allow `0.0.0.0/0` (or Render IPs)
-4. Connect ΓåÆ copy the connection string (`MONGODB_URI`)
-
-
+2. Database Access → create a user
+3. Network Access → allow `0.0.0.0/0` (or Render IPs)
+4. Connect → copy the connection string (`MONGODB_URI`)
 
 ### 2. Render (backend)
 
 1. Push this repo to GitHub
-2. Render ΓåÆ **New Web Service** ΓåÆ connect the repo
+2. Render → **New Web Service** → connect the repo
 3. Settings:
-  - **Root Directory:** `backend`
-  - **Build Command:** `npm install`
-  - **Start Command:** `npm start`
+   - **Root Directory:** `backend`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
 4. Environment variables:
 
 ```
@@ -78,48 +70,40 @@ CORS_ORIGIN=https://your-app.vercel.app
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=email@gmail.com
-SMTP_PASS=gmail-app-password
-MAIL_FROM=SnippetVault <email@gmail.com>
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+MAIL_FROM=SnippetVault <your-email@gmail.com>
 ```
 
-1. Deploy and copy the backend URL, e.g. `https://snippetvault-api.onrender.com`
-
-
+5. Deploy and copy the backend URL, e.g. `https://snippetvault-api.onrender.com`
 
 ### 3. Vercel (frontend)
 
-1. Vercel ΓåÆ **Add New Project** ΓåÆ import the same GitHub repo
+1. Vercel → **Add New Project** → import the same GitHub repo
 2. Settings:
-  - **Root Directory:** `frontend`
-  - **Framework Preset:** Vite
-  - **Build Command:** `npm run build`
-  - **Output Directory:** `dist`
+   - **Root Directory:** `frontend`
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
 3. Environment variable:
 
 ```
 VITE_API_URL=https://your-render-url.onrender.com/api
 ```
 
-1. Deploy, then put that Vercel URL into Render `CORS_ORIGIN` and redeploy backend if needed
-
-
+4. Deploy, then put that Vercel URL into Render `CORS_ORIGIN` and redeploy backend if needed
 
 ## API
 
-
-| Method | Endpoint                 | Description            |
-| ------ | ------------------------ | ---------------------- |
-| `POST` | `/api/auth/otp/request`  | Send login OTP         |
-| `POST` | `/api/auth/otp/verify`   | Verify OTP and get JWT |
-| `GET`  | `/api/auth/me`           | Current user           |
-| `GET`  | `/api/snippets`          | List public posts      |
-| `GET`  | `/api/snippets/mine`     | My posts (auth)        |
-| `POST` | `/api/snippets`          | Create snippet (auth)  |
-| `GET`  | `/api/snippets/:shortId` | Retrieve snippet       |
-
-
-
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/otp/request` | Send login OTP |
+| `POST` | `/api/auth/otp/verify` | Verify OTP and get JWT |
+| `GET` | `/api/auth/me` | Current user |
+| `GET` | `/api/snippets` | List public posts |
+| `GET` | `/api/snippets/mine` | My posts (auth) |
+| `POST` | `/api/snippets` | Create snippet (auth) |
+| `GET` | `/api/snippets/:shortId` | Retrieve snippet |
 
 ### Create snippet body
 
