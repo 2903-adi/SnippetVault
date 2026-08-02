@@ -5,11 +5,15 @@ async function sendWithBrevo(email, code) {
   const apiKey = process.env.BREVO_API_KEY?.trim();
   if (!apiKey) return null;
 
-  const senderEmail = (process.env.MAIL_FROM || process.env.SMTP_USER || "").trim();
+  const senderEmail = (process.env.MAIL_FROM || process.env.SMTP_USER || "")
+    .trim()
+    .replace(/^.*<([^>]+)>.*$/, "$1");
+
   if (!senderEmail) {
-    throw Object.assign(new Error("MAIL_FROM or SMTP_USER required for Brevo"), {
-      statusCode: 503,
-    });
+    throw Object.assign(
+      new Error("Set MAIL_FROM to your verified Brevo sender email"),
+      { statusCode: 503 }
+    );
   }
 
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -27,8 +31,8 @@ async function sendWithBrevo(email, code) {
         <div style="font-family: sans-serif; line-height: 1.5; color: #0b1f1c;">
           <h2>SnippetVault</h2>
           <p>Your login code is:</p>
-          <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700;">${code}</p>
-          <p>This code expires in 10 minutes.</p>
+          <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700; color: #0f6b4c;">${code}</p>
+          <p>This code expires in 10 minutes. If you did not request this, ignore this email.</p>
         </div>
       `,
       textContent: `Your SnippetVault verification code is ${code}. It expires in 10 minutes.`,
@@ -44,7 +48,7 @@ async function sendWithBrevo(email, code) {
   }
 
   console.log(`OTP email sent via Brevo to ${email}`);
-  return payload;
+  return { channel: "brevo" };
 }
 
 async function sendWithSmtp(email, code) {
@@ -71,7 +75,7 @@ async function sendWithSmtp(email, code) {
   });
 
   const from = (process.env.MAIL_FROM || process.env.SMTP_USER).trim();
-  const info = await transporter.sendMail({
+  await transporter.sendMail({
     from,
     to: email,
     subject: "Your SnippetVault login code",
@@ -80,38 +84,36 @@ async function sendWithSmtp(email, code) {
       <div style="font-family: sans-serif; line-height: 1.5; color: #0b1f1c;">
         <h2>SnippetVault</h2>
         <p>Your login code is:</p>
-        <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700;">${code}</p>
-        <p>This code expires in 10 minutes.</p>
+        <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700; color: #0f6b4c;">${code}</p>
+        <p>This code expires in 10 minutes. If you did not request this, ignore this email.</p>
       </div>
     `,
   });
 
   console.log(`OTP email sent via SMTP to ${email}`);
-  return info;
+  return { channel: "smtp" };
 }
 
 export async function sendOtpEmail(email, code) {
-  try {
-    const brevo = await sendWithBrevo(email, code);
-    if (brevo) return { channel: "brevo" };
-  } catch (err) {
-    console.error("Brevo failed:", err.message);
-    if (!process.env.SMTP_HOST) throw err;
+  if (process.env.BREVO_API_KEY?.trim()) {
+    return sendWithBrevo(email, code);
   }
 
   try {
     const smtp = await sendWithSmtp(email, code);
-    if (smtp) return { channel: "smtp" };
+    if (smtp) return smtp;
   } catch (err) {
     console.error("SMTP failed:", err.message);
     throw Object.assign(
-      new Error(err.message || "Could not send email"),
+      new Error(
+        "SMTP failed on this host. Set BREVO_API_KEY on Render for real email delivery."
+      ),
       { statusCode: 502 }
     );
   }
 
   throw Object.assign(
-    new Error("No email provider configured. Set BREVO_API_KEY (recommended on Render) or SMTP_*"),
+    new Error("Set BREVO_API_KEY in Render Environment to send OTP emails"),
     { statusCode: 503 }
   );
 }
